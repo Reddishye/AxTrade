@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Iterator;
 import java.util.Map;
 
+import static com.artillexstudios.axtrade.AxTrade.CONFIG;
 import static com.artillexstudios.axtrade.AxTrade.MESSAGEUTILS;
 
 public class TradeListeners implements Listener {
@@ -65,13 +66,22 @@ public class TradeListeners implements Listener {
 
     @EventHandler
     public void onMove(@NotNull PlayerMoveEvent event) {
+        if (CONFIG.getDouble("trade-cancel-movement-threshold") < 0) return;
+
         if (event.getTo() == null) return;
         final Trade trade = Trades.getTrade(event.getPlayer());
         if (trade == null) return;
         if (System.currentTimeMillis() - trade.getPrepTime() < 1_000L) return;
-        if (event.getFrom().distanceSquared(event.getTo()) == 0) return;
+        double distanceSquared = event.getFrom().distanceSquared(event.getTo());
+        if (distanceSquared == 0) return;
+
+        if (distanceSquared < CONFIG.getDouble("trade-cancel-movement-threshold")) {
+            return;
+        }
+
         trade.abort();
     }
+
 
     @EventHandler
     public void onInteract(@NotNull PlayerInteractEvent event) {
